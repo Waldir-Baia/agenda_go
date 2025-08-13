@@ -8,6 +8,16 @@ The system currently supports user authentication and client management with pla
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Changes
+
+**Janeiro 2025:**
+- ✓ Implementado sistema de menu principal com sidebar lateral
+- ✓ Criada página de dashboard com agendamentos do dia
+- ✓ Adicionadas páginas de Agendamentos, Clientes, Financeiro e Configurações
+- ✓ Sistema de navegação entre seções funcionando
+- ✓ Aplicada nova paleta de cores: #FFFFFF (fundo), #D9D9D9 (secundário), #284B63 (primário)
+- ✓ Integração completa entre login e dashboard principal
+
 # System Architecture
 
 ## Frontend Architecture

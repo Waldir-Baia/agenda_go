@@ -167,6 +167,7 @@ export default function ClientRegistration() {
                       <FormControl>
                         <Textarea
                           {...field}
+                          value={field.value || ""}
                           data-testid="textarea-observations"
                           rows={3}
                           placeholder="Informações adicionais sobre o cliente (opcional)"

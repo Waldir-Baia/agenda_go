@@ -4,10 +4,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
-import Login from "@/pages/login";
-import ClientRegistration from "@/pages/client-registration";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import Login from "./pages/login";
+import ClientRegistration from "./pages/client-registration";
+import Dashboard from "./pages/dashboard";
 
 function Router() {
   return (
@@ -15,6 +14,7 @@ function Router() {
       <Route path="/" component={Login} />
       <Route path="/login" component={Login} />
       <Route path="/cadastro-cliente" component={ClientRegistration} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -24,12 +24,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="min-h-screen bg-brand-background flex flex-col">
-          <Header />
-          <main className="flex-1">
-            <Router />
-          </main>
-          <Footer />
+        <div className="min-h-screen bg-brand-background">
+          <Router />
         </div>
         <Toaster />
       </TooltipProvider>

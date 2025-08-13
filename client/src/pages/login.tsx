@@ -33,8 +33,8 @@ export default function Login() {
         title: "Sucesso",
         description: data.message || "Login realizado com sucesso",
       });
-      // In a real app, you would store the auth token and redirect to dashboard
-      console.log("Login successful:", data);
+      // Redirect to dashboard after successful login
+      setLocation("/dashboard");
     },
     onError: (error: any) => {
       toast({
