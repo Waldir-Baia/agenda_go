@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Client, type InsertClient, type Service, type InsertService } from "@shared/schema";
+import { type User, type InsertUser, type Client, type InsertClient, type Service, type InsertService, type Appointment, type InsertAppointment } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -19,17 +19,27 @@ export interface IStorage {
   createService(service: InsertService): Promise<Service>;
   updateService(id: string, service: Partial<InsertService>): Promise<Service | undefined>;
   deleteService(id: string): Promise<boolean>;
+  
+  getAppointment(id: string): Promise<Appointment | undefined>;
+  getAllAppointments(): Promise<Appointment[]>;
+  getAppointmentsByDate(date: string): Promise<Appointment[]>;
+  getAppointmentsByClient(clientId: string): Promise<Appointment[]>;
+  createAppointment(appointment: InsertAppointment): Promise<Appointment>;
+  updateAppointment(id: string, appointment: Partial<InsertAppointment>): Promise<Appointment | undefined>;
+  deleteAppointment(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private clients: Map<string, Client>;
   private services: Map<string, Service>;
+  private appointments: Map<string, Appointment>;
 
   constructor() {
     this.users = new Map();
     this.clients = new Map();
     this.services = new Map();
+    this.appointments = new Map();
     
     // Create a default admin user for testing
     const adminUser: User = {
@@ -167,6 +177,53 @@ export class MemStorage implements IStorage {
 
   async deleteService(id: string): Promise<boolean> {
     return this.services.delete(id);
+  }
+
+  async getAppointment(id: string): Promise<Appointment | undefined> {
+    return this.appointments.get(id);
+  }
+
+  async getAllAppointments(): Promise<Appointment[]> {
+    return Array.from(this.appointments.values());
+  }
+
+  async getAppointmentsByDate(date: string): Promise<Appointment[]> {
+    return Array.from(this.appointments.values()).filter(
+      appointment => appointment.date === date
+    );
+  }
+
+  async getAppointmentsByClient(clientId: string): Promise<Appointment[]> {
+    return Array.from(this.appointments.values()).filter(
+      appointment => appointment.client_id === clientId
+    );
+  }
+
+  async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
+    const id = randomUUID();
+    const appointment: Appointment = { 
+      ...insertAppointment, 
+      id,
+      observations: insertAppointment.observations || null,
+      created_at: new Date()
+    };
+    this.appointments.set(id, appointment);
+    return appointment;
+  }
+
+  async updateAppointment(id: string, appointmentData: Partial<InsertAppointment>): Promise<Appointment | undefined> {
+    const existingAppointment = this.appointments.get(id);
+    if (!existingAppointment) {
+      return undefined;
+    }
+    
+    const updatedAppointment: Appointment = { ...existingAppointment, ...appointmentData };
+    this.appointments.set(id, updatedAppointment);
+    return updatedAppointment;
+  }
+
+  async deleteAppointment(id: string): Promise<boolean> {
+    return this.appointments.delete(id);
   }
 }
 

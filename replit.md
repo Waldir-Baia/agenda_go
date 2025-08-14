@@ -22,6 +22,12 @@ Preferred communication style: Simple, everyday language.
 - ✓ Criado schema de banco de dados para serviços (nome, descrição, duração, preço, status ativo)
 - ✓ Adicionadas rotas da API para CRUD completo de serviços
 - ✓ Interface completa com formulários, listagem e ações de editar/excluir serviços
+- ✓ Expandido sistema de clientes com campos CPF/CNPJ e endereço completo
+- ✓ Implementado sistema completo de agendamentos com calendário interativo
+- ✓ Criado schema de banco de dados para agendamentos (cliente, serviço, data, hora, status)
+- ✓ Adicionadas rotas da API para CRUD completo de agendamentos com validações
+- ✓ Interface de agendamento com seleção de cliente, serviço, data e horário
+- ✓ Sistema de validação de conflitos de horário e verificação de disponibilidade
 
 # System Architecture
 

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertServiceSchema, loginSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertAppointmentSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -226,6 +226,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Erro ao excluir serviço" });
+    }
+  });
+
+  // Appointment management endpoints
+  app.get("/api/appointments", async (req, res) => {
+    try {
+      const appointments = await storage.getAllAppointments();
+      res.json(appointments);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar agendamentos" });
+    }
+  });
+
+  app.get("/api/appointments/date/:date", async (req, res) => {
+    try {
+      const appointments = await storage.getAppointmentsByDate(req.params.date);
+      res.json(appointments);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar agendamentos por data" });
+    }
+  });
+
+  app.get("/api/appointments/client/:clientId", async (req, res) => {
+    try {
+      const appointments = await storage.getAppointmentsByClient(req.params.clientId);
+      res.json(appointments);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar agendamentos do cliente" });
+    }
+  });
+
+  app.post("/api/appointments", async (req, res) => {
+    try {
+      const appointmentData = insertAppointmentSchema.parse(req.body);
+      
+      // Verificar se cliente existe
+      const client = await storage.getClient(appointmentData.client_id);
+      if (!client) {
+        return res.status(400).json({ 
+          message: "Cliente não encontrado" 
+        });
+      }
+
+      // Verificar se serviço existe e está ativo
+      const service = await storage.getService(appointmentData.service_id);
+      if (!service) {
+        return res.status(400).json({ 
+          message: "Serviço não encontrado" 
+        });
+      }
+      if (service.active !== "true") {
+        return res.status(400).json({ 
+          message: "Serviço não está ativo" 
+        });
+      }
+
+      // Verificar se já existe agendamento no mesmo horário
+      const existingAppointments = await storage.getAppointmentsByDate(appointmentData.date);
+      const conflictingAppointment = existingAppointments.find(
+        apt => apt.time === appointmentData.time && apt.status !== "cancelado"
+      );
+      
+      if (conflictingAppointment) {
+        return res.status(400).json({ 
+          message: "Já existe um agendamento neste horário" 
+        });
+      }
+      
+      const appointment = await storage.createAppointment(appointmentData);
+      res.status(201).json({
+        success: true,
+        appointment,
+        message: "Agendamento criado com sucesso"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.get("/api/appointments/:id", async (req, res) => {
+    try {
+      const appointment = await storage.getAppointment(req.params.id);
+      if (!appointment) {
+        return res.status(404).json({ message: "Agendamento não encontrado" });
+      }
+      res.json(appointment);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar agendamento" });
+    }
+  });
+
+  app.put("/api/appointments/:id", async (req, res) => {
+    try {
+      const appointmentData = insertAppointmentSchema.partial().parse(req.body);
+      
+      // Se está alterando o horário, verificar conflitos
+      if (appointmentData.date && appointmentData.time) {
+        const existingAppointments = await storage.getAppointmentsByDate(appointmentData.date);
+        const conflictingAppointment = existingAppointments.find(
+          apt => apt.time === appointmentData.time && 
+                 apt.status !== "cancelado" && 
+                 apt.id !== req.params.id
+        );
+        
+        if (conflictingAppointment) {
+          return res.status(400).json({ 
+            message: "Já existe um agendamento neste horário" 
+          });
+        }
+      }
+      
+      const updatedAppointment = await storage.updateAppointment(req.params.id, appointmentData);
+      if (!updatedAppointment) {
+        return res.status(404).json({ message: "Agendamento não encontrado" });
+      }
+      
+      res.json({
+        success: true,
+        appointment: updatedAppointment,
+        message: "Agendamento atualizado com sucesso"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.delete("/api/appointments/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteAppointment(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Agendamento não encontrado" });
+      }
+      
+      res.json({
+        success: true,
+        message: "Agendamento excluído com sucesso"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao excluir agendamento" });
     }
   });
 

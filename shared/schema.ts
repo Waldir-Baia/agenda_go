@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, numeric, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -26,6 +26,17 @@ export const services = pgTable("services", {
   duration: numeric("duration").notNull(), // duração em minutos
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   active: text("active").notNull().default("true"), // "true" ou "false"
+});
+
+export const appointments = pgTable("appointments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  client_id: varchar("client_id").notNull(),
+  service_id: varchar("service_id").notNull(),
+  date: text("date").notNull(), // formato YYYY-MM-DD
+  time: text("time").notNull(), // formato HH:MM
+  status: text("status").notNull().default("pendente"), // "pendente", "confirmado", "cancelado", "concluido"
+  observations: text("observations"),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -61,6 +72,21 @@ export const insertServiceSchema = createInsertSchema(services).pick({
   active: z.string().default("true"),
 });
 
+export const insertAppointmentSchema = createInsertSchema(appointments).pick({
+  client_id: true,
+  service_id: true,
+  date: true,
+  time: true,
+  status: true,
+  observations: true,
+}).extend({
+  client_id: z.string().min(1, "Cliente é obrigatório"),
+  service_id: z.string().min(1, "Serviço é obrigatório"),
+  date: z.string().min(1, "Data é obrigatória"),
+  time: z.string().min(1, "Horário é obrigatório"),
+  status: z.string().default("pendente"),
+});
+
 export const loginSchema = z.object({
   username: z.string().min(1, "Usuário é obrigatório"),
   password: z.string().min(1, "Senha é obrigatória"),
@@ -72,4 +98,6 @@ export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Client = typeof clients.$inferSelect;
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Service = typeof services.$inferSelect;
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
+export type Appointment = typeof appointments.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;
