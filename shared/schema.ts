@@ -12,6 +12,8 @@ export const users = pgTable("users", {
 export const clients = pgTable("clients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  cpf_cnpj: text("cpf_cnpj").notNull(),
+  address: text("address").notNull(),
   phone: text("phone").notNull(),
   email: text("email").notNull(),
   observations: text("observations"),
@@ -33,13 +35,17 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertClientSchema = createInsertSchema(clients).pick({
   name: true,
+  cpf_cnpj: true,
+  address: true,
   phone: true,
   email: true,
   observations: true,
 }).extend({
+  name: z.string().min(1, "Nome é obrigatório"),
+  cpf_cnpj: z.string().min(1, "CPF/CNPJ é obrigatório"),
+  address: z.string().min(1, "Endereço é obrigatório"),
   phone: z.string().min(1, "Telefone é obrigatório"),
   email: z.string().email("E-mail deve ter um formato válido"),
-  name: z.string().min(1, "Nome é obrigatório"),
 });
 
 export const insertServiceSchema = createInsertSchema(services).pick({
