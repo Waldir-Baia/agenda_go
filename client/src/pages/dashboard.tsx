@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { Calendar, Users, DollarSign, Settings, CalendarDays, Plus, Clock } from "lucide-react";
+import { Calendar, Users, DollarSign, Settings, CalendarDays, Plus, Clock, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Sidebar from "../components/sidebar";
 import AgendamentosPage from "./agendamentos";
 import ClientesPage from "./clientes";
+import ServicosPage from "./servicos";
 import FinanceiroPage from "./financeiro";
 import ConfiguracoesPage from "./configuracoes";
 
-type MenuOption = "agendamentos" | "clientes" | "financeiro" | "configuracoes";
+type MenuOption = "agendamentos" | "clientes" | "servicos" | "financeiro" | "configuracoes";
 
 export default function Dashboard() {
   const [activeMenu, setActiveMenu] = useState<MenuOption>("agendamentos");
@@ -26,6 +27,12 @@ export default function Dashboard() {
       label: "Clientes",
       icon: Users,
       description: "Cadastro de clientes"
+    },
+    {
+      id: "servicos" as MenuOption,
+      label: "Serviços",
+      icon: Scissors,
+      description: "Gerenciar serviços"
     },
     {
       id: "financeiro" as MenuOption,
@@ -47,6 +54,8 @@ export default function Dashboard() {
         return <AgendamentosPage />;
       case "clientes":
         return <ClientesPage />;
+      case "servicos":
+        return <ServicosPage />;
       case "financeiro":
         return <FinanceiroPage />;
       case "configuracoes":

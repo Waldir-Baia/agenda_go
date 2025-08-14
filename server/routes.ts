@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, loginSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -133,6 +133,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Erro ao excluir cliente" });
+    }
+  });
+
+  // Service management endpoints
+  app.get("/api/services", async (req, res) => {
+    try {
+      const services = await storage.getAllServices();
+      res.json(services);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar serviços" });
+    }
+  });
+
+  app.get("/api/services/active", async (req, res) => {
+    try {
+      const services = await storage.getActiveServices();
+      res.json(services);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar serviços ativos" });
+    }
+  });
+
+  app.post("/api/services", async (req, res) => {
+    try {
+      const serviceData = insertServiceSchema.parse(req.body);
+      
+      const service = await storage.createService(serviceData);
+      res.status(201).json({
+        success: true,
+        service,
+        message: "Serviço cadastrado com sucesso"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.get("/api/services/:id", async (req, res) => {
+    try {
+      const service = await storage.getService(req.params.id);
+      if (!service) {
+        return res.status(404).json({ message: "Serviço não encontrado" });
+      }
+      res.json(service);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar serviço" });
+    }
+  });
+
+  app.put("/api/services/:id", async (req, res) => {
+    try {
+      const serviceData = insertServiceSchema.partial().parse(req.body);
+      
+      const updatedService = await storage.updateService(req.params.id, serviceData);
+      if (!updatedService) {
+        return res.status(404).json({ message: "Serviço não encontrado" });
+      }
+      
+      res.json({
+        success: true,
+        service: updatedService,
+        message: "Serviço atualizado com sucesso"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.delete("/api/services/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteService(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Serviço não encontrado" });
+      }
+      
+      res.json({
+        success: true,
+        message: "Serviço excluído com sucesso"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao excluir serviço" });
     }
   });
 

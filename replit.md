@@ -17,6 +17,11 @@ Preferred communication style: Simple, everyday language.
 - ✓ Sistema de navegação entre seções funcionando
 - ✓ Aplicada nova paleta de cores: #FFFFFF (fundo), #D9D9D9 (secundário), #284B63 (primário)
 - ✓ Integração completa entre login e dashboard principal
+- ✓ Adicionada nova guia "Serviços" no menu lateral
+- ✓ Implementado sistema completo de cadastro e gerenciamento de serviços
+- ✓ Criado schema de banco de dados para serviços (nome, descrição, duração, preço, status ativo)
+- ✓ Adicionadas rotas da API para CRUD completo de serviços
+- ✓ Interface completa com formulários, listagem e ações de editar/excluir serviços
 
 # System Architecture
 
