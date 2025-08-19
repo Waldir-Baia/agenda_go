@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertServiceSchema, insertAppointmentSchema, loginSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertAppointmentSchema, insertProductSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -377,6 +377,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Erro ao excluir agendamento" });
+    }
+  });
+
+  // Product management endpoints
+  app.get("/api/products", async (req, res) => {
+    try {
+      const products = await storage.getAllProducts();
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar produtos" });
+    }
+  });
+
+  app.get("/api/products/active", async (req, res) => {
+    try {
+      const products = await storage.getActiveProducts();
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar produtos ativos" });
+    }
+  });
+
+  app.get("/api/products/category/:category", async (req, res) => {
+    try {
+      const products = await storage.getProductsByCategory(req.params.category);
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar produtos por categoria" });
+    }
+  });
+
+  app.get("/api/products/low-stock", async (req, res) => {
+    try {
+      const products = await storage.getLowStockProducts();
+      res.json(products);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar produtos com estoque baixo" });
+    }
+  });
+
+  app.post("/api/products", async (req, res) => {
+    try {
+      const productData = insertProductSchema.parse(req.body);
+      
+      const product = await storage.createProduct(productData);
+      res.status(201).json({
+        success: true,
+        product,
+        message: "Produto cadastrado com sucesso"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.get("/api/products/:id", async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).json({ message: "Produto não encontrado" });
+      }
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar produto" });
+    }
+  });
+
+  app.put("/api/products/:id", async (req, res) => {
+    try {
+      const productData = insertProductSchema.partial().parse(req.body);
+      
+      const updatedProduct = await storage.updateProduct(req.params.id, productData);
+      if (!updatedProduct) {
+        return res.status(404).json({ message: "Produto não encontrado" });
+      }
+      
+      res.json({
+        success: true,
+        product: updatedProduct,
+        message: "Produto atualizado com sucesso"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.delete("/api/products/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteProduct(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Produto não encontrado" });
+      }
+      
+      res.json({
+        success: true,
+        message: "Produto excluído com sucesso"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao excluir produto" });
     }
   });
 

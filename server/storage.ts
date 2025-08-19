@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Client, type InsertClient, type Service, type InsertService, type Appointment, type InsertAppointment } from "@shared/schema";
+import { type User, type InsertUser, type Client, type InsertClient, type Service, type InsertService, type Appointment, type InsertAppointment, type Product, type InsertProduct } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -27,6 +27,15 @@ export interface IStorage {
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: string, appointment: Partial<InsertAppointment>): Promise<Appointment | undefined>;
   deleteAppointment(id: string): Promise<boolean>;
+  
+  getProduct(id: string): Promise<Product | undefined>;
+  getAllProducts(): Promise<Product[]>;
+  getActiveProducts(): Promise<Product[]>;
+  getProductsByCategory(category: string): Promise<Product[]>;
+  getLowStockProducts(): Promise<Product[]>;
+  createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
+  deleteProduct(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -34,12 +43,14 @@ export class MemStorage implements IStorage {
   private clients: Map<string, Client>;
   private services: Map<string, Service>;
   private appointments: Map<string, Appointment>;
+  private products: Map<string, Product>;
 
   constructor() {
     this.users = new Map();
     this.clients = new Map();
     this.services = new Map();
     this.appointments = new Map();
+    this.products = new Map();
     
     // Create a default admin user for testing
     const adminUser: User = {
@@ -224,6 +235,63 @@ export class MemStorage implements IStorage {
 
   async deleteAppointment(id: string): Promise<boolean> {
     return this.appointments.delete(id);
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> {
+    return this.products.get(id);
+  }
+
+  async getAllProducts(): Promise<Product[]> {
+    return Array.from(this.products.values());
+  }
+
+  async getActiveProducts(): Promise<Product[]> {
+    return Array.from(this.products.values()).filter(
+      product => product.active === "true"
+    );
+  }
+
+  async getProductsByCategory(category: string): Promise<Product[]> {
+    return Array.from(this.products.values()).filter(
+      product => product.category === category
+    );
+  }
+
+  async getLowStockProducts(): Promise<Product[]> {
+    return Array.from(this.products.values()).filter(
+      product => Number(product.quantity) <= Number(product.min_quantity)
+    );
+  }
+
+  async createProduct(insertProduct: InsertProduct): Promise<Product> {
+    const id = randomUUID();
+    const product: Product = { 
+      ...insertProduct, 
+      id,
+      description: insertProduct.description || null,
+      cost_price: insertProduct.cost_price || null,
+      sale_price: insertProduct.sale_price || null,
+      supplier: insertProduct.supplier || null,
+      barcode: insertProduct.barcode || null,
+      created_at: new Date()
+    };
+    this.products.set(id, product);
+    return product;
+  }
+
+  async updateProduct(id: string, productData: Partial<InsertProduct>): Promise<Product | undefined> {
+    const existingProduct = this.products.get(id);
+    if (!existingProduct) {
+      return undefined;
+    }
+    
+    const updatedProduct: Product = { ...existingProduct, ...productData };
+    this.products.set(id, updatedProduct);
+    return updatedProduct;
+  }
+
+  async deleteProduct(id: string): Promise<boolean> {
+    return this.products.delete(id);
   }
 }
 

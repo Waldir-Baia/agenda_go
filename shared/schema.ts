@@ -39,6 +39,22 @@ export const appointments = pgTable("appointments", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+export const products = pgTable("products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(), // "consumo", "venda", "uso"
+  quantity: numeric("quantity").notNull().default("0"),
+  min_quantity: numeric("min_quantity").notNull().default("5"), // estoque mínimo para alerta
+  unit: text("unit").notNull(), // "unidade", "kg", "litro", "metro", etc.
+  cost_price: numeric("cost_price", { precision: 10, scale: 2 }), // preço de custo
+  sale_price: numeric("sale_price", { precision: 10, scale: 2 }), // preço de venda (se aplicável)
+  supplier: text("supplier"), // fornecedor
+  barcode: text("barcode"), // código de barras/EAN
+  active: text("active").notNull().default("true"), // "true" ou "false"
+  created_at: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -87,6 +103,29 @@ export const insertAppointmentSchema = createInsertSchema(appointments).pick({
   status: z.string().default("pendente"),
 });
 
+export const insertProductSchema = createInsertSchema(products).pick({
+  name: true,
+  description: true,
+  category: true,
+  quantity: true,
+  min_quantity: true,
+  unit: true,
+  cost_price: true,
+  sale_price: true,
+  supplier: true,
+  barcode: true,
+  active: true,
+}).extend({
+  name: z.string().min(1, "Nome do produto é obrigatório"),
+  category: z.string().min(1, "Categoria é obrigatória"),
+  quantity: z.string().min(0, "Quantidade deve ser maior ou igual a 0"),
+  min_quantity: z.string().min(0, "Quantidade mínima deve ser maior ou igual a 0"),
+  unit: z.string().min(1, "Unidade é obrigatória"),
+  cost_price: z.string().optional(),
+  sale_price: z.string().optional(),
+  active: z.string().default("true"),
+});
+
 export const loginSchema = z.object({
   username: z.string().min(1, "Usuário é obrigatório"),
   password: z.string().min(1, "Senha é obrigatória"),
@@ -100,4 +139,6 @@ export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Service = typeof services.$inferSelect;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 export type Appointment = typeof appointments.$inferSelect;
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type Product = typeof products.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;

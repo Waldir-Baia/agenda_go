@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Users, DollarSign, Settings, CalendarDays, Plus, Clock, Scissors } from "lucide-react";
+import { Calendar, Users, DollarSign, Settings, CalendarDays, Plus, Clock, Scissors, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,10 +7,11 @@ import Sidebar from "../components/sidebar";
 import AgendamentosPage from "./agendamentos";
 import ClientesPage from "./clientes";
 import ServicosPage from "./servicos";
+import ProdutosPage from "./produtos";
 import FinanceiroPage from "./financeiro";
 import ConfiguracoesPage from "./configuracoes";
 
-type MenuOption = "agendamentos" | "clientes" | "servicos" | "financeiro" | "configuracoes";
+type MenuOption = "agendamentos" | "clientes" | "servicos" | "produtos" | "financeiro" | "configuracoes";
 
 export default function Dashboard() {
   const [activeMenu, setActiveMenu] = useState<MenuOption>("agendamentos");
@@ -35,6 +36,12 @@ export default function Dashboard() {
       description: "Gerenciar serviços"
     },
     {
+      id: "produtos" as MenuOption,
+      label: "Produtos/Almoxerifado",
+      icon: Package,
+      description: "Controle de estoque"
+    },
+    {
       id: "financeiro" as MenuOption,
       label: "Financeiro",
       icon: DollarSign,
@@ -56,6 +63,8 @@ export default function Dashboard() {
         return <ClientesPage />;
       case "servicos":
         return <ServicosPage />;
+      case "produtos":
+        return <ProdutosPage />;
       case "financeiro":
         return <FinanceiroPage />;
       case "configuracoes":
