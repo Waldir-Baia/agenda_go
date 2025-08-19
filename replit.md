@@ -28,6 +28,15 @@ Preferred communication style: Simple, everyday language.
 - ✓ Adicionadas rotas da API para CRUD completo de agendamentos com validações
 - ✓ Interface de agendamento com seleção de cliente, serviço, data e horário
 - ✓ Sistema de validação de conflitos de horário e verificação de disponibilidade
+- ✓ Reformulação completa do sistema financeiro com layout em tabs
+- ✓ Implementado sistema de contas a receber e contas a pagar
+- ✓ Criado schema de banco de dados para contas a receber (cliente, valor, vencimento, status)
+- ✓ Criado schema de banco de dados para contas a pagar (fornecedor, valor, categoria, vencimento, status)
+- ✓ Adicionadas rotas da API para CRUD completo de contas a receber e contas a pagar
+- ✓ Interface com três abas: Resumo do Mês, Contas a Receber e Contas a Pagar
+- ✓ Dashboard financeiro com resumo mensal, saldos e projeções
+- ✓ Sistema de marcação de contas como pagas com atualização automática
+- ✓ Filtros e visualizações por status e período
 
 # System Architecture
 
@@ -51,7 +60,7 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL (configured via Drizzle)
 - **ORM**: Drizzle ORM with migrations support
 - **Schema**: Shared TypeScript schemas using drizzle-zod for validation
-- **Tables**: Users (authentication) and Clients (customer management)
+- **Tables**: Users (authentication), Clients (customer management), Services (service catalog), Appointments (scheduling), Products (inventory), Accounts Receivable (receivables management), Accounts Payable (payables management)
 
 ## Authentication & Authorization
 - **Method**: Simple username/password authentication

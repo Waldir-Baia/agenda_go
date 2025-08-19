@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Client, type InsertClient, type Service, type InsertService, type Appointment, type InsertAppointment, type Product, type InsertProduct } from "@shared/schema";
+import { type User, type InsertUser, type Client, type InsertClient, type Service, type InsertService, type Appointment, type InsertAppointment, type Product, type InsertProduct, type AccountReceivable, type InsertAccountReceivable, type AccountPayable, type InsertAccountPayable } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -36,6 +36,22 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<boolean>;
+  
+  // Accounts Receivable
+  getAllAccountsReceivable(): Promise<AccountReceivable[]>;
+  getAccountsReceivableByStatus(status: string): Promise<AccountReceivable[]>;
+  getAccountsReceivableByMonth(month: string): Promise<AccountReceivable[]>;
+  createAccountReceivable(account: InsertAccountReceivable): Promise<AccountReceivable>;
+  updateAccountReceivable(id: string, account: Partial<InsertAccountReceivable>): Promise<AccountReceivable | undefined>;
+  deleteAccountReceivable(id: string): Promise<boolean>;
+  
+  // Accounts Payable
+  getAllAccountsPayable(): Promise<AccountPayable[]>;
+  getAccountsPayableByStatus(status: string): Promise<AccountPayable[]>;
+  getAccountsPayableByMonth(month: string): Promise<AccountPayable[]>;
+  createAccountPayable(account: InsertAccountPayable): Promise<AccountPayable>;
+  updateAccountPayable(id: string, account: Partial<InsertAccountPayable>): Promise<AccountPayable | undefined>;
+  deleteAccountPayable(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -44,6 +60,8 @@ export class MemStorage implements IStorage {
   private services: Map<string, Service>;
   private appointments: Map<string, Appointment>;
   private products: Map<string, Product>;
+  private accountsReceivable: Map<string, AccountReceivable>;
+  private accountsPayable: Map<string, AccountPayable>;
 
   constructor() {
     this.users = new Map();
@@ -51,6 +69,8 @@ export class MemStorage implements IStorage {
     this.services = new Map();
     this.appointments = new Map();
     this.products = new Map();
+    this.accountsReceivable = new Map();
+    this.accountsPayable = new Map();
     
     // Create a default admin user for testing
     const adminUser: User = {
@@ -292,6 +312,100 @@ export class MemStorage implements IStorage {
 
   async deleteProduct(id: string): Promise<boolean> {
     return this.products.delete(id);
+  }
+
+  // Accounts Receivable methods
+  async getAllAccountsReceivable(): Promise<AccountReceivable[]> {
+    return Array.from(this.accountsReceivable.values());
+  }
+
+  async getAccountsReceivableByStatus(status: string): Promise<AccountReceivable[]> {
+    return Array.from(this.accountsReceivable.values()).filter(
+      account => account.status === status
+    );
+  }
+
+  async getAccountsReceivableByMonth(month: string): Promise<AccountReceivable[]> {
+    return Array.from(this.accountsReceivable.values()).filter(
+      account => account.due_date.startsWith(month)
+    );
+  }
+
+  async createAccountReceivable(insertAccount: InsertAccountReceivable): Promise<AccountReceivable> {
+    const id = randomUUID();
+    const account: AccountReceivable = { 
+      ...insertAccount, 
+      id,
+      client_id: insertAccount.client_id || null,
+      appointment_id: insertAccount.appointment_id || null,
+      payment_date: insertAccount.payment_date || null,
+      payment_method: insertAccount.payment_method || null,
+      observations: insertAccount.observations || null,
+      created_at: new Date()
+    };
+    this.accountsReceivable.set(id, account);
+    return account;
+  }
+
+  async updateAccountReceivable(id: string, accountData: Partial<InsertAccountReceivable>): Promise<AccountReceivable | undefined> {
+    const existingAccount = this.accountsReceivable.get(id);
+    if (!existingAccount) {
+      return undefined;
+    }
+    
+    const updatedAccount: AccountReceivable = { ...existingAccount, ...accountData };
+    this.accountsReceivable.set(id, updatedAccount);
+    return updatedAccount;
+  }
+
+  async deleteAccountReceivable(id: string): Promise<boolean> {
+    return this.accountsReceivable.delete(id);
+  }
+
+  // Accounts Payable methods
+  async getAllAccountsPayable(): Promise<AccountPayable[]> {
+    return Array.from(this.accountsPayable.values());
+  }
+
+  async getAccountsPayableByStatus(status: string): Promise<AccountPayable[]> {
+    return Array.from(this.accountsPayable.values()).filter(
+      account => account.status === status
+    );
+  }
+
+  async getAccountsPayableByMonth(month: string): Promise<AccountPayable[]> {
+    return Array.from(this.accountsPayable.values()).filter(
+      account => account.due_date.startsWith(month)
+    );
+  }
+
+  async createAccountPayable(insertAccount: InsertAccountPayable): Promise<AccountPayable> {
+    const id = randomUUID();
+    const account: AccountPayable = { 
+      ...insertAccount, 
+      id,
+      payment_date: insertAccount.payment_date || null,
+      payment_method: insertAccount.payment_method || null,
+      observations: insertAccount.observations || null,
+      created_at: new Date()
+    };
+    this.accountsPayable.set(id, account);
+    return account;
+  }
+
+  async updateAccountPayable(id: string, accountData: Partial<InsertAccountPayable>): Promise<AccountPayable | undefined> {
+    const existingAccount = this.accountsPayable.get(id);
+    if (!existingAccount) {
+      return undefined;
+    }
+    
+    const updatedAccount: AccountPayable = { ...existingAccount, ...accountData };
+    this.accountsPayable.set(id, updatedAccount);
+    return updatedAccount;
+  }
+
+  async deleteAccountPayable(id: string): Promise<boolean> {
+    return this.accountsPayable.delete(id);
   }
 }
 

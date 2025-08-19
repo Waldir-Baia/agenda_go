@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertServiceSchema, insertAppointmentSchema, insertProductSchema, loginSchema } from "@shared/schema";
+import { insertClientSchema, insertServiceSchema, insertAppointmentSchema, insertProductSchema, insertAccountReceivableSchema, insertAccountPayableSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -488,6 +488,235 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Erro ao excluir produto" });
+    }
+  });
+
+  // Accounts Receivable endpoints
+  app.get("/api/accounts-receivable", async (req, res) => {
+    try {
+      const accounts = await storage.getAllAccountsReceivable();
+      res.json(accounts);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar contas a receber" });
+    }
+  });
+
+  app.get("/api/accounts-receivable/status/:status", async (req, res) => {
+    try {
+      const accounts = await storage.getAccountsReceivableByStatus(req.params.status);
+      res.json(accounts);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar contas a receber por status" });
+    }
+  });
+
+  app.get("/api/accounts-receivable/month/:month", async (req, res) => {
+    try {
+      const accounts = await storage.getAccountsReceivableByMonth(req.params.month);
+      res.json(accounts);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar contas a receber por mês" });
+    }
+  });
+
+  app.post("/api/accounts-receivable", async (req, res) => {
+    try {
+      const accountData = insertAccountReceivableSchema.parse(req.body);
+      
+      const account = await storage.createAccountReceivable(accountData);
+      res.status(201).json({
+        success: true,
+        account,
+        message: "Conta a receber cadastrada com sucesso"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.put("/api/accounts-receivable/:id", async (req, res) => {
+    try {
+      const accountData = insertAccountReceivableSchema.partial().parse(req.body);
+      
+      const updatedAccount = await storage.updateAccountReceivable(req.params.id, accountData);
+      if (!updatedAccount) {
+        return res.status(404).json({ message: "Conta a receber não encontrada" });
+      }
+      
+      res.json({
+        success: true,
+        account: updatedAccount,
+        message: "Conta a receber atualizada com sucesso"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.delete("/api/accounts-receivable/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteAccountReceivable(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Conta a receber não encontrada" });
+      }
+      
+      res.json({
+        success: true,
+        message: "Conta a receber excluída com sucesso"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao excluir conta a receber" });
+    }
+  });
+
+  // Accounts Payable endpoints
+  app.get("/api/accounts-payable", async (req, res) => {
+    try {
+      const accounts = await storage.getAllAccountsPayable();
+      res.json(accounts);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar contas a pagar" });
+    }
+  });
+
+  app.get("/api/accounts-payable/status/:status", async (req, res) => {
+    try {
+      const accounts = await storage.getAccountsPayableByStatus(req.params.status);
+      res.json(accounts);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar contas a pagar por status" });
+    }
+  });
+
+  app.get("/api/accounts-payable/month/:month", async (req, res) => {
+    try {
+      const accounts = await storage.getAccountsPayableByMonth(req.params.month);
+      res.json(accounts);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar contas a pagar por mês" });
+    }
+  });
+
+  app.post("/api/accounts-payable", async (req, res) => {
+    try {
+      const accountData = insertAccountPayableSchema.parse(req.body);
+      
+      const account = await storage.createAccountPayable(accountData);
+      res.status(201).json({
+        success: true,
+        account,
+        message: "Conta a pagar cadastrada com sucesso"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.put("/api/accounts-payable/:id", async (req, res) => {
+    try {
+      const accountData = insertAccountPayableSchema.partial().parse(req.body);
+      
+      const updatedAccount = await storage.updateAccountPayable(req.params.id, accountData);
+      if (!updatedAccount) {
+        return res.status(404).json({ message: "Conta a pagar não encontrada" });
+      }
+      
+      res.json({
+        success: true,
+        account: updatedAccount,
+        message: "Conta a pagar atualizada com sucesso"
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Dados inválidos", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  });
+
+  app.delete("/api/accounts-payable/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteAccountPayable(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Conta a pagar não encontrada" });
+      }
+      
+      res.json({
+        success: true,
+        message: "Conta a pagar excluída com sucesso"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao excluir conta a pagar" });
+    }
+  });
+
+  // Financial summary endpoint
+  app.get("/api/financial/summary/:month", async (req, res) => {
+    try {
+      const month = req.params.month;
+      
+      const receivables = await storage.getAccountsReceivableByMonth(month);
+      const payables = await storage.getAccountsPayableByMonth(month);
+      
+      const totalReceivable = receivables.reduce((sum: number, account) => {
+        return sum + parseFloat(account.amount.toString());
+      }, 0);
+      
+      const totalPayable = payables.reduce((sum: number, account) => {
+        return sum + parseFloat(account.amount.toString());
+      }, 0);
+      
+      const paidReceivable = receivables
+        .filter(account => account.status === "pago")
+        .reduce((sum: number, account) => sum + parseFloat(account.amount.toString()), 0);
+      
+      const paidPayable = payables
+        .filter(account => account.status === "pago")
+        .reduce((sum: number, account) => sum + parseFloat(account.amount.toString()), 0);
+      
+      const pendingReceivable = receivables
+        .filter(account => account.status === "pendente")
+        .reduce((sum: number, account) => sum + parseFloat(account.amount.toString()), 0);
+      
+      const pendingPayable = payables
+        .filter(account => account.status === "pendente")
+        .reduce((sum: number, account) => sum + parseFloat(account.amount.toString()), 0);
+      
+      const summary = {
+        totalReceivable,
+        totalPayable,
+        paidReceivable,
+        paidPayable,
+        pendingReceivable,
+        pendingPayable,
+        balance: paidReceivable - paidPayable,
+        projectedBalance: totalReceivable - totalPayable
+      };
+      
+      res.json(summary);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar resumo financeiro" });
     }
   });
 

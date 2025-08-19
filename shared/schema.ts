@@ -55,6 +55,34 @@ export const products = pgTable("products", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+export const accountsReceivable = pgTable("accounts_receivable", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  client_id: varchar("client_id"),
+  appointment_id: varchar("appointment_id"),
+  description: text("description").notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  due_date: text("due_date").notNull(), // formato YYYY-MM-DD
+  payment_date: text("payment_date"), // formato YYYY-MM-DD
+  status: text("status").notNull().default("pendente"), // "pendente", "pago", "atrasado", "cancelado"
+  payment_method: text("payment_method"), // "dinheiro", "pix", "cartao", "transferencia"
+  observations: text("observations"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const accountsPayable = pgTable("accounts_payable", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supplier: text("supplier").notNull(),
+  description: text("description").notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  due_date: text("due_date").notNull(), // formato YYYY-MM-DD
+  payment_date: text("payment_date"), // formato YYYY-MM-DD
+  status: text("status").notNull().default("pendente"), // "pendente", "pago", "atrasado", "cancelado"
+  payment_method: text("payment_method"), // "dinheiro", "pix", "cartao", "transferencia"
+  category: text("category").notNull(), // "operacional", "marketing", "equipamentos", "outros"
+  observations: text("observations"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -126,6 +154,42 @@ export const insertProductSchema = createInsertSchema(products).pick({
   active: z.string().default("true"),
 });
 
+export const insertAccountReceivableSchema = createInsertSchema(accountsReceivable).pick({
+  client_id: true,
+  appointment_id: true,
+  description: true,
+  amount: true,
+  due_date: true,
+  payment_date: true,
+  status: true,
+  payment_method: true,
+  observations: true,
+}).extend({
+  description: z.string().min(1, "Descrição é obrigatória"),
+  amount: z.string().min(1, "Valor é obrigatório"),
+  due_date: z.string().min(1, "Data de vencimento é obrigatória"),
+  status: z.string().default("pendente"),
+});
+
+export const insertAccountPayableSchema = createInsertSchema(accountsPayable).pick({
+  supplier: true,
+  description: true,
+  amount: true,
+  due_date: true,
+  payment_date: true,
+  status: true,
+  payment_method: true,
+  category: true,
+  observations: true,
+}).extend({
+  supplier: z.string().min(1, "Fornecedor é obrigatório"),
+  description: z.string().min(1, "Descrição é obrigatória"),
+  amount: z.string().min(1, "Valor é obrigatório"),
+  due_date: z.string().min(1, "Data de vencimento é obrigatória"),
+  category: z.string().min(1, "Categoria é obrigatória"),
+  status: z.string().default("pendente"),
+});
+
 export const loginSchema = z.object({
   username: z.string().min(1, "Usuário é obrigatório"),
   password: z.string().min(1, "Senha é obrigatória"),
@@ -141,4 +205,8 @@ export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
+export type InsertAccountReceivable = z.infer<typeof insertAccountReceivableSchema>;
+export type AccountReceivable = typeof accountsReceivable.$inferSelect;
+export type InsertAccountPayable = z.infer<typeof insertAccountPayableSchema>;
+export type AccountPayable = typeof accountsPayable.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;
