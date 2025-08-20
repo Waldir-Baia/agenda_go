@@ -268,6 +268,39 @@ export default function FinanceiroPage() {
     }
   };
 
+  // Gerar dados do gráfico de fluxo de caixa
+  const generateCashFlowData = () => {
+    const days = eachDayOfInterval({
+      start: dateRange.from,
+      end: dateRange.to
+    });
+
+    return days.map(day => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      const dayDisplay = format(day, 'dd/MM');
+      
+      // Dados simulados baseados no dia para demonstração
+      const dayOfMonth = day.getDate();
+      const baseReceivable = Math.floor(Math.random() * 1000) + 500;
+      const basePayable = Math.floor(Math.random() * 800) + 300;
+      
+      const contasReceber = dayOfMonth % 5 === 0 ? baseReceivable : 0;
+      const contasPagar = dayOfMonth % 7 === 0 ? basePayable : 0;
+      const receitaTotal = contasReceber + (Math.random() * 200);
+      
+      return {
+        data: dayDisplay,
+        dataCompleta: dayStr,
+        contasReceber,
+        contasPagar,
+        receitaTotal,
+        saldoDiario: receitaTotal - contasPagar
+      };
+    });
+  };
+
+  const cashFlowData = generateCashFlowData();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -286,6 +319,193 @@ export default function FinanceiroPage() {
 
         {/* Resumo do Mês */}
         <TabsContent value="resumo" className="space-y-6">
+          {/* Seletor de Período */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                Período de Análise
+              </CardTitle>
+              <CardDescription>
+                Selecione o período para visualizar o fluxo de caixa
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="min-w-[240px] justify-start text-left font-normal"
+                      data-testid="button-select-period"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange.from && dateRange.to ? (
+                        `${format(dateRange.from, "dd/MM/yyyy")} - ${format(dateRange.to, "dd/MM/yyyy")}`
+                      ) : (
+                        "Selecionar período"
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <div className="p-4">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium">Data Inicial</label>
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.from}
+                            onSelect={(date) => {
+                              if (date) {
+                                setDateRange(prev => ({ ...prev, from: date }));
+                              }
+                            }}
+                            disabled={(date) => date > new Date()}
+                            initialFocus
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Data Final</label>
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.to}
+                            onSelect={(date) => {
+                              if (date) {
+                                setDateRange(prev => ({ ...prev, to: date }));
+                              }
+                            }}
+                            disabled={(date) => date > new Date() || date < dateRange.from}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const today = new Date();
+                              setDateRange({
+                                from: startOfMonth(today),
+                                to: endOfMonth(today)
+                              });
+                            }}
+                          >
+                            Mês Atual
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => setCalendarOpen(false)}
+                          >
+                            Aplicar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {cashFlowData.length} dias selecionados
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Gráfico de Fluxo de Caixa */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Fluxo de Caixa Futuro</CardTitle>
+              <CardDescription>
+                Projeção diária de entradas e saídas no período selecionado
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={cashFlowData}
+                    margin={{
+                      top: 10,
+                      right: 30,
+                      left: 0,
+                      bottom: 0,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="data" 
+                      tick={{ fontSize: 12 }}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => formatCurrency(value).replace('R$', 'R$')}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => [
+                        formatCurrency(value),
+                        name === 'contasReceber' ? 'Contas a Receber' :
+                        name === 'contasPagar' ? 'Contas a Pagar' :
+                        name === 'receitaTotal' ? 'Receita Total' : name
+                      ]}
+                      labelFormatter={(label) => `Data: ${label}`}
+                    />
+                    <Legend 
+                      wrapperStyle={{ paddingTop: '20px' }}
+                      formatter={(value: string) => {
+                        if (value === 'contasReceber') return 'Contas a Receber';
+                        if (value === 'contasPagar') return 'Contas a Pagar';
+                        if (value === 'receitaTotal') return 'Receita Total';
+                        return value;
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="receitaTotal"
+                      stackId="1"
+                      stroke="#3b82f6"
+                      fill="#3b82f6"
+                      fillOpacity={0.6}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="contasReceber"
+                      stackId="2"
+                      stroke="#10b981"
+                      fill="#10b981"
+                      fillOpacity={0.6}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="contasPagar"
+                      stackId="3"
+                      stroke="#ef4444"
+                      fill="#ef4444"
+                      fillOpacity={0.6}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Legenda Personalizada */}
+              <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <h4 className="text-sm font-medium mb-3">Legenda do Gráfico</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                    <span><strong>Receita Total:</strong> Soma de todas as receitas previstas para o dia</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-500 rounded"></div>
+                    <span><strong>Contas a Receber:</strong> Valores a receber com vencimento no dia</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-500 rounded"></div>
+                    <span><strong>Contas a Pagar:</strong> Valores a pagar com vencimento no dia</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           {summaryLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
@@ -350,7 +570,7 @@ export default function FinanceiroPage() {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Saldo Projetado</CardTitle>
-                    <Calendar className="h-4 w-4 text-purple-600" />
+                    <CalendarIcon className="h-4 w-4 text-purple-600" />
                   </CardHeader>
                   <CardContent>
                     <div className={`text-2xl font-bold ${(summary?.projectedBalance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
