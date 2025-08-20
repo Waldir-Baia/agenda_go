@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
-import { DollarSign, TrendingUp, TrendingDown, Calendar, CreditCard, Plus, Edit, Trash2, CheckCircle, XCircle, Eye } from "lucide-react";
+import { addDays, startOfMonth, endOfMonth, format, eachDayOfInterval, parseISO } from "date-fns";
+import { DollarSign, TrendingUp, TrendingDown, Calendar as CalendarIcon, CreditCard, Plus, Edit, Trash2, CheckCircle, XCircle, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -60,6 +64,14 @@ export default function FinanceiroPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<"receivable" | "payable">("receivable");
   const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
+    const today = new Date();
+    return {
+      from: startOfMonth(today),
+      to: endOfMonth(today)
+    };
+  });
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -104,11 +116,7 @@ export default function FinanceiroPage() {
   // Mutations
   const createReceivableMutation = useMutation({
     mutationFn: (data: z.infer<typeof insertAccountReceivableSchema>) =>
-      apiRequest("/api/accounts-receivable", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
-      }),
+      apiRequest("POST", "/api/accounts-receivable", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts-receivable"] });
       queryClient.invalidateQueries({ queryKey: ["/api/financial/summary"] });
@@ -120,11 +128,7 @@ export default function FinanceiroPage() {
 
   const updateReceivableMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<z.infer<typeof insertAccountReceivableSchema>> }) =>
-      apiRequest(`/api/accounts-receivable/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
-      }),
+      apiRequest("PUT", `/api/accounts-receivable/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts-receivable"] });
       queryClient.invalidateQueries({ queryKey: ["/api/financial/summary"] });
@@ -137,7 +141,7 @@ export default function FinanceiroPage() {
 
   const deleteReceivableMutation = useMutation({
     mutationFn: (id: string) =>
-      apiRequest(`/api/accounts-receivable/${id}`, { method: "DELETE" }),
+      apiRequest("DELETE", `/api/accounts-receivable/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts-receivable"] });
       queryClient.invalidateQueries({ queryKey: ["/api/financial/summary"] });
@@ -147,11 +151,7 @@ export default function FinanceiroPage() {
 
   const createPayableMutation = useMutation({
     mutationFn: (data: z.infer<typeof insertAccountPayableSchema>) =>
-      apiRequest("/api/accounts-payable", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
-      }),
+      apiRequest("POST", "/api/accounts-payable", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts-payable"] });
       queryClient.invalidateQueries({ queryKey: ["/api/financial/summary"] });
@@ -163,11 +163,7 @@ export default function FinanceiroPage() {
 
   const updatePayableMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<z.infer<typeof insertAccountPayableSchema>> }) =>
-      apiRequest(`/api/accounts-payable/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
-      }),
+      apiRequest("PUT", `/api/accounts-payable/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts-payable"] });
       queryClient.invalidateQueries({ queryKey: ["/api/financial/summary"] });
@@ -180,7 +176,7 @@ export default function FinanceiroPage() {
 
   const deletePayableMutation = useMutation({
     mutationFn: (id: string) =>
-      apiRequest(`/api/accounts-payable/${id}`, { method: "DELETE" }),
+      apiRequest("DELETE", `/api/accounts-payable/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/accounts-payable"] });
       queryClient.invalidateQueries({ queryKey: ["/api/financial/summary"] });
